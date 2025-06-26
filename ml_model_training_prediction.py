@@ -3,20 +3,19 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, r2_score
-import joblib # For saving/loading models
+import joblib
 import os
+from sqlalchemy.orm import Session
+from database import Prediction # Import Prediction model
 
 class YieldPredictor:
     def __init__(self, model_path="models/random_forest_model.joblib"):
         self.model = None
         self.model_path = model_path
-        self.features = None # To store feature names used during training
+        self.features = None
 
     def _generate_synthetic_training_data(self, num_samples=100):
-        """
-        Generates synthetic training data for demonstration.
-        In a real system, this would be loaded from preprocessed data files.
-        """
+        """Generates synthetic training data for demonstration."""
         print(f"Generating {num_samples} synthetic training samples...")
         data = {
             'farm_id': [f'FARM_{i:03d}' for i in range(num_samples)],
@@ -30,8 +29,6 @@ class YieldPredictor:
         }
         df = pd.DataFrame(data)
         
-        # Create a synthetic 'yield' target variable based on features
-        # This relationship is arbitrary for demonstration
         df['yield'] = (
             1.5 
             + df['avg_temp_growth_period'] * 0.05 
@@ -39,16 +36,13 @@ class YieldPredictor:
             + df['avg_ndvi_growth_period'] * 2.0 
             - df['soil_ph'] * 0.1 
             + df['previous_yield'] * 0.3
-            + np.random.normal(0, 0.2, num_samples) # Add some noise
+            + np.random.normal(0, 0.2, num_samples)
         )
-        df['yield'] = np.clip(df['yield'], 0.1, 5.0) # Ensure yield is realistic
+        df['yield'] = np.clip(df['yield'], 0.1, 5.0)
         return df
 
     def train_model(self, data_df=None, target_column='yield', test_size=0.2, random_state=42):
-        """
-        Trains the machine learning model.
-        If data_df is None, synthetic data will be generated.
-        """
+        """Trains the machine learning model."""
         print("Starting model training...")
         if data_df is None:
             data_df = self._generate_synthetic_training_data()
@@ -62,11 +56,9 @@ class YieldPredictor:
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
 
-        # Using RandomForestRegressor as an example
         self.model = RandomForestRegressor(n_estimators=100, random_state=random_state, n_jobs=-1)
         self.model.fit(X_train, y_train)
 
-        # Evaluate model
         y_pred = self.model.predict(X_test)
         mae = mean_absolute_error(y_test, y_pred)
         r2 = r2_score(y_test, y_pred)
@@ -75,26 +67,43 @@ class YieldPredictor:
         self.save_model()
         return mae, r2
 
-    def make_prediction(self, new_data_df):
+    def make_prediction(self, new_data_df, db_session: Session = None):
         """
-        Makes yield predictions on new, unseen data.
-        new_data_df: DataFrame with the same features as used for training.
+        Makes yield predictions on new, unseen data and optionally saves to DB.
         """
         if self.model is None:
             self.load_model()
-            if self.model is None: # If still None after attempting to load
+            if self.model is None:
                 raise ValueError("Model not trained or loaded. Please train or load a model first.")
 
-        # Ensure new_data_df has the same columns and order as features used for training
-        if self.features: # Only if features are defined (i.e., model was trained/loaded)
-            # Add missing features with default (e.g., 0) if they are not in new_data_df
+        if self.features:
             for feature in self.features:
                 if feature not in new_data_df.columns:
-                    new_data_df[feature] = 0 # Or a sensible default/imputation strategy
-            new_data_df = new_data_df[self.features] # Reorder columns
+                    new_data_df[feature] = 0
+            new_data_df = new_data_df[self.features]
 
         print("Making yield predictions...")
         predictions = self.model.predict(new_data_df)
+
+        if db_session and not new_data_df.empty:
+            for index, row in new_data_df.iterrows():
+                farm_id = row['farm_id'] if 'farm_id' in row else "UNKNOWN_FARM" # Assuming farm_id exists
+                predicted_yield_value = predictions[index]
+                
+                new_prediction_entry = Prediction(
+                    farm_id=farm_id,
+                    predicted_yield=float(predicted_yield_value), # Ensure float type
+                    timestamp=datetime.datetime.now()
+                )
+                db_session.add(new_prediction_entry)
+                try:
+                    db_session.commit()
+                    db_session.refresh(new_prediction_entry)
+                    print(f"Prediction for {farm_id} saved to database. ID: {new_prediction_entry.id}")
+                except Exception as e:
+                    db_session.rollback()
+                    print(f"Error saving prediction for {farm_id} to DB: {e}")
+
         return predictions
 
     def save_model(self):
@@ -113,14 +122,14 @@ class YieldPredictor:
         else:
             print(f"No model found at {self.model_path}. Please train a model first.")
 
-# Example usage (for internal testing)
+# Example usage (for internal testing) - Now requires a dummy DB session if run directly
 if __name__ == "__main__":
+    from database import get_db, create_db_tables
+    create_db_tables() # Ensure tables exist for testing
+
     predictor = YieldPredictor()
-    
-    # Train the model using synthetic data
     predictor.train_model()
 
-    # Simulate new data for prediction (this would come from DataProcessor)
     new_farm_data = pd.DataFrame({
         'farm_id': ['F006'],
         'planting_month': [4],
@@ -132,5 +141,6 @@ if __name__ == "__main__":
         'previous_yield': [1.65]
     })
     
-    predicted_yields = predictor.make_prediction(new_farm_data)
-    print(f"\nPredicted yield for F006: {predicted_yields[0]:.2f} tons/hectare")
+    with get_db() as db:
+        predicted_yields = predictor.make_prediction(new_farm_data, db_session=db)
+        print(f"\nPredicted yield for F006: {predicted_yields[0]:.2f} tons/hectare")

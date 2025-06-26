@@ -3,21 +3,25 @@ import datetime
 import os
 import json
 import logging
+import time
+import numpy as np
+import uuid # <--- THIS IMPORT IS CRUCIAL
 
 # Import modules from our project
 from data_ingestion_preprocessing import DataProcessor
 from ml_model_training_prediction import YieldPredictor
 from blockchain_interface import BlockchainInterface
 
+# Import database functions and models
+from database import create_db_tables, get_db, FarmData, Prediction, ActualYield, Shipment
+
 # Configure logging for better visibility
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class AgriPredictXOrchestrator:
     def __init__(self, config_path="config.json"):
-        # First, load or create the configuration
         self.config = self._load_or_create_config(config_path)
         
-        # Then, use the loaded/created configuration to initialize other components
         self.data_processor = DataProcessor(self.config.get('data_processor', {}))
         self.yield_predictor = YieldPredictor(self.config.get('model_path', 'models/random_forest_model.joblib'))
         self.blockchain_client = BlockchainInterface(self.config.get('blockchain', {}))
@@ -42,8 +46,6 @@ class AgriPredictXOrchestrator:
                 }
             }
             
-            # Create directories needed for the project using the dummy_config
-            # This part was causing the error as self.config was not yet assigned
             os.makedirs(os.path.dirname(dummy_config.get('model_path', 'models/random_forest_model.joblib')), exist_ok=True)
             os.makedirs(dummy_config.get('data_storage_dir', 'data/'), exist_ok=True)
 
@@ -53,127 +55,165 @@ class AgriPredictXOrchestrator:
 
     def initial_setup_and_training(self):
         """
-        Performs initial setup, including training the ML model.
+        Performs initial setup, including creating database tables and training the ML model.
         This should be run once or when the model needs retraining.
         """
         logging.info("Performing initial setup and model training.")
-        # The YieldPredictor's train_model method will generate synthetic data if none is provided.
+        
+        # 1. Create database tables if they don't exist
+        create_db_tables()
+        logging.info("Database tables ensured.")
+
+        # 2. Train the model (using synthetic data if no data is passed)
         mae, r2 = self.yield_predictor.train_model()
         logging.info(f"Initial model training complete. MAE: {mae:.2f}, R2: {r2:.2f}")
 
     def run_prediction_cycle(self, farm_id, lat, lon, current_date):
         """
-        Orchestrates the data ingestion, ML prediction, and blockchain recording for a farm.
+        Orchestrates the data ingestion, ML prediction, and database/blockchain recording for a farm.
         """
         logging.info(f"Starting prediction cycle for farm: {farm_id}")
 
-        # 1. Data Ingestion & Preprocessing
-        # Simulate relevant date ranges for data fetching
-        start_date_data = current_date - datetime.timedelta(days=180) # e.g., last 6 months of historical data
-        
-        # Ingest simulated data for the specific farm's context
-        weather_data = self.data_processor.fetch_weather_data(lat, lon, start_date_data, current_date)
-        satellite_data = self.data_processor.fetch_satellite_data(bounding_box=[lon-0.1, lat-0.1, lon+0.1, lat+0.1], 
-                                                                  start_date=start_date_data, end_date=current_date)
-        
-        # For soil and farm practices, we assume some base data for demonstration.
-        # In a real system, this would be pulled from a database or farmer input system.
-        soil_data = self.data_processor.load_soil_data(farm_ids=[farm_id])
-        farm_practices_data = self.data_processor.load_farm_practices_data(farm_ids=[farm_id])
+        with get_db() as db: # Obtain a database session
+            # 1. Data Ingestion & Preprocessing
+            start_date_data = current_date - datetime.timedelta(days=180)
+            
+            weather_data = self.data_processor.fetch_weather_data(lat, lon, start_date_data, current_date)
+            satellite_data = self.data_processor.fetch_satellite_data(bounding_box=[lon-0.1, lat-0.1, lon+0.1, lat+0.1], 
+                                                                      start_date=start_date_data, end_date=current_date)
+            
+            # Load and/or save farm practices data to DB
+            farm_practices_data = self.data_processor.load_farm_practices_data(farm_ids=[farm_id], db_session=db)
+            
+            # Load and/or save soil data to DB
+            soil_data = self.data_processor.load_soil_data(farm_ids=[farm_id], db_session=db)
 
-        # Preprocess data to create features for the ML model
-        # This function encapsulates logic to align and aggregate data for the ML input
-        prediction_input_df = self.data_processor.preprocess_data(
-            weather_data, satellite_data, soil_data, farm_practices_data, farm_id, current_date
-        )
+            # Preprocess data to create features for the ML model
+            prediction_input_df = self.data_processor.preprocess_data(
+                weather_data, satellite_data, soil_data, farm_practices_data, farm_id, current_date, db_session=db
+            )
 
-        # 2. ML Prediction
-        try:
-            predicted_yield = self.yield_predictor.make_prediction(prediction_input_df)[0]
-            logging.info(f"Predicted yield for {farm_id}: {predicted_yield:.2f} tons/hectare")
+            # 2. ML Prediction
+            try:
+                # Pass the db session to make_prediction for saving the prediction
+                predicted_yield = self.yield_predictor.make_prediction(prediction_input_df, db_session=db)[0]
+                logging.info(f"Predicted yield for {farm_id}: {predicted_yield:.2f} tons/hectare")
 
-            # 3. Record on Blockchain (mocked)
-            self.blockchain_client.record_yield_prediction(farm_id, predicted_yield, current_date)
-            logging.info(f"Yield prediction for {farm_id} would be securely recorded.")
+                # 3. Record on Blockchain (mocked) and save to DB
+                # Pass the db session to blockchain client for saving the 'blockchain' event
+                self.blockchain_client.record_yield_prediction(farm_id, predicted_yield, current_date, db_session=db) 
+                logging.info(f"Yield prediction for {farm_id} recorded in database and mocked on blockchain.")
 
-        except Exception as e:
-            logging.error(f"Error during ML prediction or blockchain recording for {farm_id}: {e}")
+            except Exception as e:
+                logging.error(f"Error during ML prediction or database/blockchain recording for {farm_id}: {e}")
 
     def run_supply_chain_logging_event(self, event_type, **kwargs):
         """
-        Orchestrates logging a supply chain event to the blockchain (mocked).
+        Orchestrates logging a supply chain event to the database and blockchain (mocked).
         """
         logging.info(f"Attempting to log supply chain event: {event_type}")
-        try:
-            if event_type == "shipment":
-                self.blockchain_client.log_shipment_event(
-                    shipment_id=kwargs['shipment_id'],
-                    farm_id=kwargs['farm_id'],
-                    quantity_kg=kwargs['quantity_kg'],
-                    origin_loc=kwargs['origin_loc'],
-                    dest_loc=kwargs['dest_loc'],
-                    timestamp=kwargs['timestamp']
-                )
-                logging.info(f"Shipment {kwargs['shipment_id']} event would be logged successfully.")
-            elif event_type == "actual_yield":
-                self.blockchain_client.record_actual_yield(
-                    farm_id=kwargs['farm_id'],
-                    actual_yield=kwargs['actual_yield'],
-                    timestamp=kwargs['timestamp'],
-                    prediction_tx_hash=kwargs.get('prediction_tx_hash') # Optional: link to a prediction
-                )
-                logging.info(f"Actual yield for {kwargs['farm_id']} would be logged successfully.")
-            else:
-                logging.warning(f"Unknown supply chain event type: {event_type}. No action taken.")
-        except Exception as e:
-            logging.error(f"Error logging {event_type} event: {e}")
+        with get_db() as db: # Obtain a database session
+            try:
+                if event_type == "shipment":
+                    self.blockchain_client.log_shipment_event(
+                        shipment_id=kwargs['shipment_id'],
+                        farm_id=kwargs['farm_id'],
+                        quantity_kg=kwargs['quantity_kg'],
+                        origin_loc=kwargs['origin_loc'],
+                        dest_loc=kwargs['dest_loc'],
+                        timestamp=kwargs['timestamp'],
+                        db_session=db # Pass db session
+                    )
+                    logging.info(f"Shipment {kwargs['shipment_id']} event logged successfully in DB and mocked on blockchain.")
+                elif event_type == "actual_yield":
+                    self.blockchain_client.record_actual_yield(
+                        farm_id=kwargs['farm_id'],
+                        actual_yield=kwargs['actual_yield'],
+                        timestamp=kwargs['timestamp'],
+                        db_session=db, # Pass db session
+                        prediction_tx_hash=kwargs.get('prediction_tx_hash') # Optional: link to a previous prediction
+                    )
+                    logging.info(f"Actual yield for {kwargs['farm_id']} logged successfully in DB and mocked on blockchain.")
+                else:
+                    logging.warning(f"Unknown supply chain event type: {event_type}. No action taken.")
+            except Exception as e:
+                db.rollback() # Ensure rollback on error
+                logging.error(f"Error logging {event_type} event: {e}")
+                raise # Re-raise the exception after logging
 
-# Main execution block
+    def populate_initial_dummy_data(self):
+        """
+        Populates the database with an initial set of dummy farm data, predictions,
+        actual yields, and shipments for demonstration purposes.
+        This ensures the dashboard has data to display on first run.
+        """
+        logging.info("\n--- Populating initial dummy data for dashboard ---")
+        
+        farms_to_simulate = [
+            {"id": "Dodoma_Farm_A", "lat": -6.1738, "lon": 35.7479, "initial_yield": 1.8},
+            {"id": "Mbeya_Farm_B", "lat": -8.9038, "lon": 33.4568, "initial_yield": 2.2},
+            {"id": "Morogoro_Farm_C", "lat": -6.8228, "lon": 37.6698, "initial_yield": 1.5},
+            {"id": "Arusha_Farm_D", "lat": -3.3869, "lon": 36.6822, "initial_yield": 2.5},
+            {"id": "Iringa_Farm_E", "lat": -7.7709, "lon": 35.6985, "initial_yield": 1.9},
+            {"id": "Tabora_Farm_F", "lat": -5.0333, "lon": 32.8000, "initial_yield": 1.7},
+        ]
+
+        current_sim_date = datetime.datetime.now() # Starting simulation date
+
+        for i, farm_info in enumerate(farms_to_simulate):
+            logging.info(f"Simulating for {farm_info['id']} on {current_sim_date.strftime('%Y-%m-%d')}")
+            self.run_prediction_cycle(
+                farm_id=farm_info['id'],
+                lat=farm_info['lat'],
+                lon=farm_info['lon'],
+                current_date=current_sim_date
+            )
+            
+            if i % 2 == 0 and i > 0: # Simulate an actual yield for some farms after a delay
+                self.run_supply_chain_logging_event(
+                    event_type="actual_yield",
+                    farm_id=farm_info['id'],
+                    actual_yield=round(farm_info['initial_yield'] * (0.9 + 0.2 * (i % 3)), 2),
+                    timestamp=current_sim_date + datetime.timedelta(days=30),
+                    prediction_tx_hash=f"mock_pred_tx_{farm_info['id']}_{current_sim_date.strftime('%Y%m%d')}"
+                )
+            
+            current_sim_date += datetime.timedelta(days=np.random.randint(5, 15))
+
+        shipment_counter = 1
+        for i in range(len(farms_to_simulate) * 2): # Generate more shipments than farms
+            farm_id = np.random.choice([f['id'] for f in farms_to_simulate])
+            quantity = np.random.randint(500, 3000)
+            origin = np.random.choice(['Dodoma Collection Point', 'Mbeya Hub', 'Morogoro Warehouse'])
+            destination = np.random.choice(['Dar es Salaam Central Market', 'Arusha Distribution', 'Zanzibar Port'])
+            shipment_time = datetime.datetime.now() + datetime.timedelta(days=np.random.randint(1, 60))
+            
+            self.run_supply_chain_logging_event(
+                event_type="shipment",
+                shipment_id=f"SHIP-{shipment_counter:03d}_{uuid.uuid4().hex[:8]}", # Ensure unique ID
+                farm_id=farm_id,
+                quantity_kg=quantity,
+                origin_loc=origin,
+                dest_loc=destination,
+                timestamp=shipment_time
+            )
+            shipment_counter += 1
+            time.sleep(0.05) # Small delay
+
+        logging.info("--- Initial dummy data population complete ---")
+
+# Main execution block for standalone running (e.g., for testing or initial setup)
 if __name__ == "__main__":
     orchestrator = AgriPredictXOrchestrator()
-
-    # --- Step 1: Initial Model Training (Run once or periodically) ---
     orchestrator.initial_setup_and_training()
+    orchestrator.populate_initial_dummy_data()
 
-    # --- Step 2: Run a Prediction Cycle for a specific farm ---
-    # Example: Simulating a farm in Dodoma region, Tanzania (approximate lat/lon)
-    farm_id_to_predict = "Dodoma_Farm_A"
-    farm_lat = -6.1738
-    farm_lon = 35.7479
-    current_sim_date = datetime.datetime.now()
-
-    orchestrator.run_prediction_cycle(
-        farm_id=farm_id_to_predict,
-        lat=farm_lat,
-        lon=farm_lon,
-        current_date=current_sim_date
-    )
-
-    # --- Step 3: Simulate and Log a Supply Chain Event (e.g., a shipment) ---
-    orchestrator.run_supply_chain_logging_event(
-        event_type="shipment",
-        shipment_id="SHIP-DOD-DAR-001",
-        farm_id=farm_id_to_predict,
-        quantity_kg=1500, # kg of produce
-        origin_loc="Dodoma Collection Point",
-        dest_loc="Dar es Salaam Central Market",
-        timestamp=current_sim_date + datetime.timedelta(days=1) # Next day
-    )
-
-    # --- Step 4: Simulate and Log an Actual Yield after harvest ---
-    orchestrator.run_supply_chain_logging_event(
-        event_type="actual_yield",
-        farm_id=farm_id_to_predict,
-        actual_yield=2.05, # Actual yield observed
-        timestamp=current_sim_date + datetime.timedelta(days=30), # After a month
-        prediction_tx_hash="some_mock_tx_hash_from_step2" # Link to a previous prediction
-    )
-
-    # --- Step 5: Retrieve Simulated History (conceptual) ---
-    print("\n--- Retrieving Simulated Farm History ---")
-    history = orchestrator.blockchain_client.get_farm_yield_history(farm_id_to_predict)
-    print(f"History for {farm_id_to_predict}:")
+    # Example of retrieving history for one farm
+    farm_id_to_check_history = "Dodoma_Farm_A"
+    print(f"\n--- Retrieving Farm History from Database for {farm_id_to_check_history} ---")
+    with get_db() as db:
+        history = orchestrator.blockchain_client.get_farm_yield_history(farm_id_to_check_history, db_session=db)
     print(f"  Predicted Yields: {history['predictions']}")
     print(f"  Actual Yields: {history['actuals']}")
 
-    logging.info("AgriPredict-X demonstration complete. Check print statements for mocked outputs.")
+    logging.info("AgriPredict-X standalone demonstration complete.")
