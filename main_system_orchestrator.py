@@ -14,11 +14,12 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 class AgriPredictXOrchestrator:
     def __init__(self, config_path="config.json"):
+        # First, load or create the configuration
         self.config = self._load_or_create_config(config_path)
         
+        # Then, use the loaded/created configuration to initialize other components
         self.data_processor = DataProcessor(self.config.get('data_processor', {}))
         self.yield_predictor = YieldPredictor(self.config.get('model_path', 'models/random_forest_model.joblib'))
-        # BlockchainInterface is initialized without specific RPC/ABI as it's mocked
         self.blockchain_client = BlockchainInterface(self.config.get('blockchain', {}))
         
         logging.info("AgriPredict-X Orchestrator initialized.")
@@ -40,10 +41,11 @@ class AgriPredictXOrchestrator:
                     "mock_mode": True # Indicates we are in mock mode for blockchain
                 }
             }
-            # Create directories needed for the project
-            os.makedirs(os.path.dirname(self.config.get('model_path', 'models/random_forest_model.joblib')), exist_ok=True)
-            os.makedirs(self.config.get('data_storage_dir', 'data/'), exist_ok=True)
-
+            
+            # Create directories needed for the project using the dummy_config
+            # This part was causing the error as self.config was not yet assigned
+            os.makedirs(os.path.dirname(dummy_config.get('model_path', 'models/random_forest_model.joblib')), exist_ok=True)
+            os.makedirs(dummy_config.get('data_storage_dir', 'data/'), exist_ok=True)
 
             with open(config_path, 'w') as f:
                 json.dump(dummy_config, f, indent=4)

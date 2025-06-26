@@ -1,0 +1,10 @@
+{
+    "data_processor": {
+        "area_of_interest": "Tanzania"
+    },
+    "model_path": "models/random_forest_model.joblib",
+    "data_storage_dir": "data/",
+    "blockchain": {
+        "mock_mode": true
+    }
+}
