@@ -1,0 +1,720 @@
+{
+    "farms": [
+        {
+            "farm_id": "Dodoma_Farm_A",
+            "crop_type": "Maize",
+            "soil_type": "Clay",
+            "ph": 6.5,
+            "nitrogen": 149.71,
+            "phosphorus": 38.02,
+            "planting_date": "2025-03-28T09:43:59.165271",
+            "fertilizer_applied": false,
+            "irrigation_method": "Drip",
+            "previous_yield": 1.8,
+            "last_updated": "2025-06-27T09:43:59.165353"
+        },
+        {
+            "farm_id": "Mbeya_Farm_B",
+            "crop_type": "Rice",
+            "soil_type": "Clay",
+            "ph": 6.0,
+            "nitrogen": 101.46,
+            "phosphorus": 41.86,
+            "planting_date": "2025-04-26T09:43:59.165271",
+            "fertilizer_applied": false,
+            "irrigation_method": "Drip",
+            "previous_yield": 2.2,
+            "last_updated": "2025-06-27T09:43:59.174080"
+        },
+        {
+            "farm_id": "Morogoro_Farm_C",
+            "crop_type": "Beans",
+            "soil_type": "Sand",
+            "ph": 6.9,
+            "nitrogen": 140.16,
+            "phosphorus": 50.99,
+            "planting_date": "2025-04-05T09:43:59.165271",
+            "fertilizer_applied": false,
+            "irrigation_method": "Rainfed",
+            "previous_yield": 1.5,
+            "last_updated": "2025-06-27T09:43:59.181416"
+        },
+        {
+            "farm_id": "Arusha_Farm_D",
+            "crop_type": "Beans",
+            "soil_type": "Loam",
+            "ph": 6.9,
+            "nitrogen": 94.15,
+            "phosphorus": 45.26,
+            "planting_date": "2025-04-12T09:43:59.165271",
+            "fertilizer_applied": true,
+            "irrigation_method": "Drip",
+            "previous_yield": 2.5,
+            "last_updated": "2025-06-27T09:43:59.189598"
+        },
+        {
+            "farm_id": "Iringa_Farm_E",
+            "crop_type": "Rice",
+            "soil_type": "Clay",
+            "ph": 7.1,
+            "nitrogen": 89.68,
+            "phosphorus": 57.13,
+            "planting_date": "2025-05-06T09:43:59.165271",
+            "fertilizer_applied": true,
+            "irrigation_method": "Sprinkler",
+            "previous_yield": 1.9,
+            "last_updated": "2025-06-27T09:43:59.196979"
+        },
+        {
+            "farm_id": "Tabora_Farm_F",
+            "crop_type": "Wheat",
+            "soil_type": "Sand",
+            "ph": 6.0,
+            "nitrogen": 54.12,
+            "phosphorus": 30.28,
+            "planting_date": "2025-04-30T09:43:59.165271",
+            "fertilizer_applied": false,
+            "irrigation_method": "Drip",
+            "previous_yield": 1.7,
+            "last_updated": "2025-06-27T09:43:59.204324"
+        },
+        {
+            "farm_id": "NewFarm_007",
+            "crop_type": "Maize",
+            "soil_type": "Clay",
+            "ph": 6.2,
+            "nitrogen": 60.68,
+            "phosphorus": 36.27,
+            "planting_date": "2025-03-10T09:44:02.497724",
+            "fertilizer_applied": false,
+            "irrigation_method": "Rainfed",
+            "previous_yield": 2.33,
+            "last_updated": "2025-06-27T09:44:02.497743"
+        },
+        {
+            "farm_id": "NewFarm_008",
+            "crop_type": "Wheat",
+            "soil_type": "Sand",
+            "ph": 5.9,
+            "nitrogen": 129.04,
+            "phosphorus": 55.6,
+            "planting_date": "2025-02-28T09:56:57.392196",
+            "fertilizer_applied": false,
+            "irrigation_method": "Rainfed",
+            "previous_yield": 1.43,
+            "last_updated": "2025-06-27T09:56:57.392217"
+        },
+        {
+            "farm_id": "NewFarm_009",
+            "crop_type": "Beans",
+            "soil_type": "Sand",
+            "ph": 6.0,
+            "nitrogen": 126.82,
+            "phosphorus": 64.46,
+            "planting_date": "2025-03-21T09:57:52.413347",
+            "fertilizer_applied": true,
+            "irrigation_method": "Drip",
+            "previous_yield": 2.96,
+            "last_updated": "2025-06-27T09:57:52.413373"
+        },
+        {
+            "farm_id": "NewFarm_010",
+            "crop_type": "Maize",
+            "soil_type": "Loam",
+            "ph": 7.0,
+            "nitrogen": 114.34,
+            "phosphorus": 35.58,
+            "planting_date": "2025-04-03T10:01:15.511509",
+            "fertilizer_applied": true,
+            "irrigation_method": "Sprinkler",
+            "previous_yield": 1.9,
+            "last_updated": "2025-06-27T10:01:15.511535"
+        },
+        {
+            "farm_id": "NewFarm_011",
+            "crop_type": "Maize",
+            "soil_type": "Loam",
+            "ph": 6.7,
+            "nitrogen": 72.91,
+            "phosphorus": 63.92,
+            "planting_date": "2025-03-18T10:01:20.205428",
+            "fertilizer_applied": false,
+            "irrigation_method": "Drip",
+            "previous_yield": 1.41,
+            "last_updated": "2025-06-27T10:01:20.205453"
+        }
+    ],
+    "predictions": [],
+    "actual_yields": [
+        {
+            "id": "a041e269-6e2e-4070-a2b2-6f0c2fbfe9c6",
+            "farm_id": "Morogoro_Farm_C",
+            "actual_yield": 1.95,
+            "timestamp": "2025-08-21T09:43:59.165271",
+            "linked_prediction_id": null
+        },
+        {
+            "id": "7b7819d7-5d18-4f1e-862a-73b523b2645f",
+            "farm_id": "Iringa_Farm_E",
+            "actual_yield": 2.09,
+            "timestamp": "2025-09-10T09:43:59.165271",
+            "linked_prediction_id": null
+        },
+        {
+            "id": "7093125c-0659-42d4-8e3c-7a2b81a7b030",
+            "farm_id": "NewFarm_007",
+            "actual_yield": 2.55,
+            "timestamp": "2025-07-29T10:28:02.496676",
+            "linked_prediction_id": null
+        },
+        {
+            "id": "45e967a1-058c-472a-840f-0ca74ee300e8",
+            "farm_id": "Morogoro_Farm_C",
+            "actual_yield": 1.95,
+            "timestamp": "2025-08-15T09:56:47.859688",
+            "linked_prediction_id": null
+        },
+        {
+            "id": "cb42d794-a840-4a12-9009-57432ce86b1d",
+            "farm_id": "Iringa_Farm_E",
+            "actual_yield": 2.09,
+            "timestamp": "2025-09-02T09:56:47.859688",
+            "linked_prediction_id": null
+        },
+        {
+            "id": "8e47c82c-305e-4f5a-af80-2c5b38802618",
+            "farm_id": "NewFarm_008",
+            "actual_yield": 2.45,
+            "timestamp": "2025-07-26T10:13:57.391142",
+            "linked_prediction_id": null
+        },
+        {
+            "id": "27352586-46c7-4577-96af-f49543dd9682",
+            "farm_id": "Morogoro_Farm_C",
+            "actual_yield": 1.95,
+            "timestamp": "2025-08-13T09:57:48.055803",
+            "linked_prediction_id": null
+        },
+        {
+            "id": "4070a56e-b23e-457e-bc39-e5931b946cf0",
+            "farm_id": "Iringa_Farm_E",
+            "actual_yield": 2.09,
+            "timestamp": "2025-09-01T09:57:48.055803",
+            "linked_prediction_id": null
+        },
+        {
+            "id": "ee13fba1-c705-46ba-8d63-b802812e9007",
+            "farm_id": "NewFarm_009",
+            "actual_yield": 2.65,
+            "timestamp": "2025-07-17T10:45:52.412239",
+            "linked_prediction_id": null
+        },
+        {
+            "id": "1e088cb9-5f8f-44b4-ae4e-2ec33b805ab6",
+            "farm_id": "Morogoro_Farm_C",
+            "actual_yield": 1.95,
+            "timestamp": "2025-08-20T10:01:08.689801",
+            "linked_prediction_id": null
+        },
+        {
+            "id": "e1695d9f-85e3-40ed-bc4a-16ea5ea31c91",
+            "farm_id": "Iringa_Farm_E",
+            "actual_yield": 2.09,
+            "timestamp": "2025-09-08T10:01:08.689801",
+            "linked_prediction_id": null
+        },
+        {
+            "id": "38dd6e6f-e257-44ab-bffb-033df6989b5f",
+            "farm_id": "NewFarm_010",
+            "actual_yield": 2.06,
+            "timestamp": "2025-07-21T10:41:15.510179",
+            "linked_prediction_id": null
+        },
+        {
+            "id": "eb51e5d4-b796-4420-9845-5b390c6e4a46",
+            "farm_id": "NewFarm_011",
+            "actual_yield": 2.0,
+            "timestamp": "2025-07-20T10:35:20.203859",
+            "linked_prediction_id": null
+        }
+    ],
+    "shipments": [
+        {
+            "id": "e44d9744-a339-4e20-896d-47cb31e598de",
+            "shipment_id": "SHIP-001_226d44bb",
+            "farm_id": "Dodoma_Farm_A",
+            "quantity_kg": 751,
+            "origin_loc": "Morogoro Warehouse",
+            "dest_loc": "Arusha Distribution",
+            "timestamp": "2025-08-01T09:43:59.211446"
+        },
+        {
+            "id": "9766856e-f2fe-40fd-9bff-afe53ab6d73d",
+            "shipment_id": "SHIP-002_c87dcd19",
+            "farm_id": "Dodoma_Farm_A",
+            "quantity_kg": 1649,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Zanzibar Port",
+            "timestamp": "2025-08-22T09:43:59.266927"
+        },
+        {
+            "id": "5a37b7f7-0c9d-4fec-ba2f-5dc45db9b89a",
+            "shipment_id": "SHIP-003_d29c68d6",
+            "farm_id": "Mbeya_Farm_B",
+            "quantity_kg": 1463,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Zanzibar Port",
+            "timestamp": "2025-08-02T09:43:59.322775"
+        },
+        {
+            "id": "220c576c-2658-41f0-a38e-af890b4744ce",
+            "shipment_id": "SHIP-004_5b519dbb",
+            "farm_id": "Dodoma_Farm_A",
+            "quantity_kg": 816,
+            "origin_loc": "Morogoro Warehouse",
+            "dest_loc": "Arusha Distribution",
+            "timestamp": "2025-08-01T09:43:59.374199"
+        },
+        {
+            "id": "873250d0-a7d8-4ce2-a45a-1d7517b7b7f5",
+            "shipment_id": "SHIP-005_95142c49",
+            "farm_id": "Tabora_Farm_F",
+            "quantity_kg": 1225,
+            "origin_loc": "Mbeya Hub",
+            "dest_loc": "Dar es Salaam Central Market",
+            "timestamp": "2025-07-25T09:43:59.430001"
+        },
+        {
+            "id": "bb66e5c6-edc4-4ee2-89b5-e17c45ccec05",
+            "shipment_id": "SHIP-006_1a4f1a1c",
+            "farm_id": "Mbeya_Farm_B",
+            "quantity_kg": 1161,
+            "origin_loc": "Mbeya Hub",
+            "dest_loc": "Dar es Salaam Central Market",
+            "timestamp": "2025-07-20T09:43:59.482360"
+        },
+        {
+            "id": "cabb3f14-8049-4c79-8324-ec420ed4c85d",
+            "shipment_id": "SHIP-007_47473cf0",
+            "farm_id": "Tabora_Farm_F",
+            "quantity_kg": 831,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Zanzibar Port",
+            "timestamp": "2025-08-08T09:43:59.538331"
+        },
+        {
+            "id": "6acc01e6-79a7-42d4-ada5-328145ba1337",
+            "shipment_id": "SHIP-008_facf4301",
+            "farm_id": "Tabora_Farm_F",
+            "quantity_kg": 2641,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Arusha Distribution",
+            "timestamp": "2025-08-13T09:43:59.591430"
+        },
+        {
+            "id": "42bad12a-929c-4a68-943b-5ec1d1b946cc",
+            "shipment_id": "SHIP-009_d55f90cc",
+            "farm_id": "Dodoma_Farm_A",
+            "quantity_kg": 1879,
+            "origin_loc": "Mbeya Hub",
+            "dest_loc": "Dar es Salaam Central Market",
+            "timestamp": "2025-07-29T09:43:59.647293"
+        },
+        {
+            "id": "aea72465-27ee-4476-99bb-d76aa5294941",
+            "shipment_id": "SHIP-010_51ad0169",
+            "farm_id": "Morogoro_Farm_C",
+            "quantity_kg": 2393,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Arusha Distribution",
+            "timestamp": "2025-07-24T09:43:59.703392"
+        },
+        {
+            "id": "b7b10e80-4347-4051-a695-98cf907ccb62",
+            "shipment_id": "SHIP-011_6b8b221d",
+            "farm_id": "Iringa_Farm_E",
+            "quantity_kg": 1235,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Zanzibar Port",
+            "timestamp": "2025-07-28T09:43:59.759377"
+        },
+        {
+            "id": "6b7a6410-a78c-478a-a334-8831357c9f4b",
+            "shipment_id": "SHIP-012_0afe8317",
+            "farm_id": "Arusha_Farm_D",
+            "quantity_kg": 2642,
+            "origin_loc": "Mbeya Hub",
+            "dest_loc": "Zanzibar Port",
+            "timestamp": "2025-07-30T09:43:59.814309"
+        },
+        {
+            "id": "a26beecf-9f2e-4da2-b935-b753d45166ed",
+            "shipment_id": "08e4a546-e996-4b89-a2bd-001aa384447e",
+            "farm_id": "NewFarm_007",
+            "quantity_kg": 1365,
+            "origin_loc": "NewFarm Local",
+            "dest_loc": "Arusha Distribution",
+            "timestamp": "2025-08-24T10:28:02.496676"
+        },
+        {
+            "id": "1e32b7f1-57dd-446b-9151-10c5b357ffcc",
+            "shipment_id": "SHIP-001_e0ada521",
+            "farm_id": "Morogoro_Farm_C",
+            "quantity_kg": 511,
+            "origin_loc": "Morogoro Warehouse",
+            "dest_loc": "Dar es Salaam Central Market",
+            "timestamp": "2025-07-28T09:56:47.906641"
+        },
+        {
+            "id": "3530c92a-02ba-429d-9bdd-4dbe8b75ac2d",
+            "shipment_id": "SHIP-002_51d71b1b",
+            "farm_id": "Morogoro_Farm_C",
+            "quantity_kg": 2024,
+            "origin_loc": "Mbeya Hub",
+            "dest_loc": "Zanzibar Port",
+            "timestamp": "2025-08-19T09:56:47.962338"
+        },
+        {
+            "id": "1c07fcb3-63d0-4e76-90a4-99c9223e3312",
+            "shipment_id": "SHIP-003_cd65546b",
+            "farm_id": "Iringa_Farm_E",
+            "quantity_kg": 986,
+            "origin_loc": "Morogoro Warehouse",
+            "dest_loc": "Arusha Distribution",
+            "timestamp": "2025-07-06T09:56:48.014339"
+        },
+        {
+            "id": "89d2f60f-8538-4ab6-834a-5be34678e642",
+            "shipment_id": "SHIP-004_51e75572",
+            "farm_id": "Arusha_Farm_D",
+            "quantity_kg": 1792,
+            "origin_loc": "Morogoro Warehouse",
+            "dest_loc": "Arusha Distribution",
+            "timestamp": "2025-07-23T09:56:48.070175"
+        },
+        {
+            "id": "2c889fca-57b9-4c2b-a02b-2263d4161705",
+            "shipment_id": "SHIP-005_b7f48b74",
+            "farm_id": "Arusha_Farm_D",
+            "quantity_kg": 1452,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Dar es Salaam Central Market",
+            "timestamp": "2025-08-16T09:56:48.122674"
+        },
+        {
+            "id": "82c149b5-841d-4017-938b-dfd43dacf0f3",
+            "shipment_id": "SHIP-006_176cf52a",
+            "farm_id": "Dodoma_Farm_A",
+            "quantity_kg": 1452,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Zanzibar Port",
+            "timestamp": "2025-07-23T09:56:48.178100"
+        },
+        {
+            "id": "6817292c-d7c3-4ad2-89cf-21e1e32bbf57",
+            "shipment_id": "SHIP-007_ba04afe5",
+            "farm_id": "Morogoro_Farm_C",
+            "quantity_kg": 1947,
+            "origin_loc": "Mbeya Hub",
+            "dest_loc": "Arusha Distribution",
+            "timestamp": "2025-08-17T09:56:48.229984"
+        },
+        {
+            "id": "ab8cd1cf-03e9-44f9-a442-236c2b400902",
+            "shipment_id": "SHIP-008_4c910a83",
+            "farm_id": "Dodoma_Farm_A",
+            "quantity_kg": 1226,
+            "origin_loc": "Mbeya Hub",
+            "dest_loc": "Zanzibar Port",
+            "timestamp": "2025-07-29T09:56:48.285518"
+        },
+        {
+            "id": "39293e01-ee22-478b-945a-fed99080c112",
+            "shipment_id": "SHIP-009_2af1fa75",
+            "farm_id": "Morogoro_Farm_C",
+            "quantity_kg": 2505,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Dar es Salaam Central Market",
+            "timestamp": "2025-07-06T09:56:48.343569"
+        },
+        {
+            "id": "c8571dc8-ad43-45b9-ade6-4569b84ae8fd",
+            "shipment_id": "SHIP-010_83943ce4",
+            "farm_id": "Tabora_Farm_F",
+            "quantity_kg": 1811,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Dar es Salaam Central Market",
+            "timestamp": "2025-08-12T09:56:48.400186"
+        },
+        {
+            "id": "3f97fbe3-f7c8-4edc-ac5a-05db573268bc",
+            "shipment_id": "SHIP-011_63fc976c",
+            "farm_id": "Morogoro_Farm_C",
+            "quantity_kg": 1968,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Dar es Salaam Central Market",
+            "timestamp": "2025-08-22T09:56:48.455396"
+        },
+        {
+            "id": "1b1c1afd-6b0e-467c-891d-51493fa6076a",
+            "shipment_id": "SHIP-012_dde64cef",
+            "farm_id": "Dodoma_Farm_A",
+            "quantity_kg": 618,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Dar es Salaam Central Market",
+            "timestamp": "2025-07-07T09:56:48.512758"
+        },
+        {
+            "id": "c1d9364b-deb0-496d-b7ac-805a42faba2f",
+            "shipment_id": "e3bc5ee5-3896-416f-937e-2364e1abc388",
+            "farm_id": "NewFarm_008",
+            "quantity_kg": 1952,
+            "origin_loc": "NewFarm Local",
+            "dest_loc": "Arusha Distribution",
+            "timestamp": "2025-08-16T10:13:57.391142"
+        },
+        {
+            "id": "c16718bd-a69d-4ddb-bc55-e5008f55a13a",
+            "shipment_id": "SHIP-001_fd9ea366",
+            "farm_id": "Dodoma_Farm_A",
+            "quantity_kg": 1899,
+            "origin_loc": "Mbeya Hub",
+            "dest_loc": "Dar es Salaam Central Market",
+            "timestamp": "2025-08-18T09:57:48.099547"
+        },
+        {
+            "id": "a860b31f-c64d-4ed4-b915-497d5c762386",
+            "shipment_id": "SHIP-002_01d2a4f0",
+            "farm_id": "Tabora_Farm_F",
+            "quantity_kg": 1069,
+            "origin_loc": "Mbeya Hub",
+            "dest_loc": "Arusha Distribution",
+            "timestamp": "2025-07-27T09:57:48.155215"
+        },
+        {
+            "id": "716f9add-fd65-407a-97c6-959b7d90ab51",
+            "shipment_id": "SHIP-003_d928badf",
+            "farm_id": "Iringa_Farm_E",
+            "quantity_kg": 730,
+            "origin_loc": "Mbeya Hub",
+            "dest_loc": "Arusha Distribution",
+            "timestamp": "2025-07-18T09:57:48.208654"
+        },
+        {
+            "id": "15e1fcfa-c0f3-4118-a99a-03abd6babd95",
+            "shipment_id": "SHIP-004_25071ef0",
+            "farm_id": "Arusha_Farm_D",
+            "quantity_kg": 2241,
+            "origin_loc": "Mbeya Hub",
+            "dest_loc": "Zanzibar Port",
+            "timestamp": "2025-07-20T09:57:48.264747"
+        },
+        {
+            "id": "0118c705-621d-4747-ad0f-2b03d3e633eb",
+            "shipment_id": "SHIP-005_296e0361",
+            "farm_id": "Arusha_Farm_D",
+            "quantity_kg": 2211,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Arusha Distribution",
+            "timestamp": "2025-07-03T09:57:48.318396"
+        },
+        {
+            "id": "8e483a99-f55a-4ce7-a87b-da9cebf20ac6",
+            "shipment_id": "SHIP-006_9827abc1",
+            "farm_id": "Arusha_Farm_D",
+            "quantity_kg": 1778,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Dar es Salaam Central Market",
+            "timestamp": "2025-07-01T09:57:48.373781"
+        },
+        {
+            "id": "764b58f7-7d9c-48ed-903d-be8ec197ac1a",
+            "shipment_id": "SHIP-007_0f5b5c98",
+            "farm_id": "Morogoro_Farm_C",
+            "quantity_kg": 2744,
+            "origin_loc": "Mbeya Hub",
+            "dest_loc": "Dar es Salaam Central Market",
+            "timestamp": "2025-08-11T09:57:48.425955"
+        },
+        {
+            "id": "ddc6e7b3-e3bf-4d48-b6de-79477d29de0a",
+            "shipment_id": "SHIP-008_aedbd985",
+            "farm_id": "Mbeya_Farm_B",
+            "quantity_kg": 1977,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Zanzibar Port",
+            "timestamp": "2025-07-26T09:57:48.482017"
+        },
+        {
+            "id": "d2552db1-a6ba-4f28-b22c-7a31f8bf2966",
+            "shipment_id": "SHIP-009_2bd3364e",
+            "farm_id": "Tabora_Farm_F",
+            "quantity_kg": 1623,
+            "origin_loc": "Mbeya Hub",
+            "dest_loc": "Arusha Distribution",
+            "timestamp": "2025-07-02T09:57:48.536035"
+        },
+        {
+            "id": "c0f206c9-212f-46f1-9579-d47078acfb2f",
+            "shipment_id": "SHIP-010_2b6c2c7d",
+            "farm_id": "Arusha_Farm_D",
+            "quantity_kg": 2581,
+            "origin_loc": "Mbeya Hub",
+            "dest_loc": "Zanzibar Port",
+            "timestamp": "2025-08-13T09:57:48.592582"
+        },
+        {
+            "id": "8efdb02e-bb90-4631-bfae-17e7bb2731de",
+            "shipment_id": "SHIP-011_81681189",
+            "farm_id": "Morogoro_Farm_C",
+            "quantity_kg": 704,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Dar es Salaam Central Market",
+            "timestamp": "2025-07-28T09:57:48.650207"
+        },
+        {
+            "id": "2ecb6e49-ebef-47a6-acd1-ca5754df5281",
+            "shipment_id": "SHIP-012_d933e352",
+            "farm_id": "Morogoro_Farm_C",
+            "quantity_kg": 2543,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Arusha Distribution",
+            "timestamp": "2025-07-14T09:57:48.706799"
+        },
+        {
+            "id": "ae6ff9b1-44f9-40e6-bc67-8b1ace8e58f6",
+            "shipment_id": "cc63b25d-4f15-47e8-b760-d8fb99f94595",
+            "farm_id": "NewFarm_009",
+            "quantity_kg": 2192,
+            "origin_loc": "NewFarm Local",
+            "dest_loc": "Zanzibar Port",
+            "timestamp": "2025-08-30T10:45:52.412239"
+        },
+        {
+            "id": "67afa3a5-efe0-4526-9ed7-e38143d314b3",
+            "shipment_id": "SHIP-001_40af7b3f",
+            "farm_id": "Morogoro_Farm_C",
+            "quantity_kg": 1528,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Dar es Salaam Central Market",
+            "timestamp": "2025-07-05T10:01:08.734328"
+        },
+        {
+            "id": "8caf6660-1ee0-45c8-920c-d96e287549e7",
+            "shipment_id": "SHIP-002_14a4fe26",
+            "farm_id": "Arusha_Farm_D",
+            "quantity_kg": 2576,
+            "origin_loc": "Morogoro Warehouse",
+            "dest_loc": "Arusha Distribution",
+            "timestamp": "2025-07-02T10:01:08.790241"
+        },
+        {
+            "id": "b299b01e-e44c-408f-8fda-c5eed7f99cd4",
+            "shipment_id": "SHIP-003_8148486d",
+            "farm_id": "Iringa_Farm_E",
+            "quantity_kg": 2057,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Dar es Salaam Central Market",
+            "timestamp": "2025-07-20T10:01:08.846556"
+        },
+        {
+            "id": "225723c2-720a-4b63-835f-fc8de38eb3e5",
+            "shipment_id": "SHIP-004_1307f2f1",
+            "farm_id": "Tabora_Farm_F",
+            "quantity_kg": 1335,
+            "origin_loc": "Morogoro Warehouse",
+            "dest_loc": "Arusha Distribution",
+            "timestamp": "2025-08-25T10:01:08.898645"
+        },
+        {
+            "id": "deb80882-11ba-4222-b5f4-1094cbc75609",
+            "shipment_id": "SHIP-005_b47dc651",
+            "farm_id": "Mbeya_Farm_B",
+            "quantity_kg": 1819,
+            "origin_loc": "Mbeya Hub",
+            "dest_loc": "Zanzibar Port",
+            "timestamp": "2025-08-04T10:01:08.952154"
+        },
+        {
+            "id": "0f137e41-651a-44a5-b912-f3bca69647b1",
+            "shipment_id": "SHIP-006_db532921",
+            "farm_id": "Iringa_Farm_E",
+            "quantity_kg": 947,
+            "origin_loc": "Mbeya Hub",
+            "dest_loc": "Zanzibar Port",
+            "timestamp": "2025-08-22T10:01:09.006011"
+        },
+        {
+            "id": "52fd8630-809c-41f2-a4d2-282f61169920",
+            "shipment_id": "SHIP-007_e66b0850",
+            "farm_id": "Dodoma_Farm_A",
+            "quantity_kg": 1139,
+            "origin_loc": "Morogoro Warehouse",
+            "dest_loc": "Arusha Distribution",
+            "timestamp": "2025-07-11T10:01:09.062475"
+        },
+        {
+            "id": "2eda5541-6519-4b82-a9ac-cb0a02f67e20",
+            "shipment_id": "SHIP-008_f447d88c",
+            "farm_id": "Iringa_Farm_E",
+            "quantity_kg": 1100,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Dar es Salaam Central Market",
+            "timestamp": "2025-07-09T10:01:09.120795"
+        },
+        {
+            "id": "e21f5cf6-d917-481f-99a7-f226d33d154c",
+            "shipment_id": "SHIP-009_086ee727",
+            "farm_id": "Iringa_Farm_E",
+            "quantity_kg": 2433,
+            "origin_loc": "Morogoro Warehouse",
+            "dest_loc": "Zanzibar Port",
+            "timestamp": "2025-08-14T10:01:09.179330"
+        },
+        {
+            "id": "15e20977-ef2a-4349-a57d-1ca531d18a66",
+            "shipment_id": "SHIP-010_f86947a2",
+            "farm_id": "Dodoma_Farm_A",
+            "quantity_kg": 1726,
+            "origin_loc": "Dodoma Collection Point",
+            "dest_loc": "Dar es Salaam Central Market",
+            "timestamp": "2025-07-07T10:01:09.236082"
+        },
+        {
+            "id": "c3e23293-3386-46d2-b460-70e79f568272",
+            "shipment_id": "SHIP-011_2a2fcc9d",
+            "farm_id": "Arusha_Farm_D",
+            "quantity_kg": 1117,
+            "origin_loc": "Morogoro Warehouse",
+            "dest_loc": "Dar es Salaam Central Market",
+            "timestamp": "2025-07-06T10:01:09.287653"
+        },
+        {
+            "id": "96062b36-cada-452e-92c4-433360652cd3",
+            "shipment_id": "SHIP-012_445f494b",
+            "farm_id": "Dodoma_Farm_A",
+            "quantity_kg": 934,
+            "origin_loc": "Mbeya Hub",
+            "dest_loc": "Arusha Distribution",
+            "timestamp": "2025-07-21T10:01:09.344411"
+        },
+        {
+            "id": "1abb72e6-fbfe-4ec1-824e-7eaa81ebd556",
+            "shipment_id": "d6be90e9-142f-40de-96a1-8e99c9133402",
+            "farm_id": "NewFarm_010",
+            "quantity_kg": 2091,
+            "origin_loc": "NewFarm Local",
+            "dest_loc": "Arusha Distribution",
+            "timestamp": "2025-08-12T10:41:15.510179"
+        },
+        {
+            "id": "656c9f6d-e0d9-4f76-b6eb-ef98bb9dd16c",
+            "shipment_id": "ad4d70c4-84d7-4101-863c-a6f5599e9129",
+            "farm_id": "NewFarm_011",
+            "quantity_kg": 1525,
+            "origin_loc": "NewFarm Local",
+            "dest_loc": "Dar es Salaam Central Market",
+            "timestamp": "2025-08-16T10:35:20.203859"
+        }
+    ]
+}
