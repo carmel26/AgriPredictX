@@ -1,7 +1,3 @@
-import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
 import datetime
 import time
@@ -10,8 +6,9 @@ import os
 import json
 import logging
 import joblib # For loading/saving the ML model
-import subprocess # Needed for launching Streamlit from python command
-import sys # Needed for sys.exit and sys.executable
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, r2_score
 
 # Configure logging for better visibility
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -21,9 +18,6 @@ APP_DATA_FILE = "app_data.json"
 MODEL_PATH = "models/random_forest_model.joblib"
 # Ensure the models directory exists
 os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
-
-# Define an environment variable to signal Streamlit app mode
-STREAMLIT_APP_MODE_ENV = "AGRIPREDICT_STREAMLIT_APP_MODE"
 
 # --- JSON Data Persistence Functions ---
 def load_app_data():
@@ -89,25 +83,29 @@ class DataProcessor:
 
     def fetch_weather_data(self, lat, lon, start_date, end_date):
         logging.info(f"Fetching mock weather data for ({lat}, {lon}) from {start_date} to {end_date}")
-        # Generate dummy weather data
+        # Generate dummy weather data as a list of dictionaries
         dates = [start_date + datetime.timedelta(days=i) for i in range((end_date - start_date).days + 1)]
-        weather_data = {
-            'date': dates,
-            'temperature_avg': np.random.uniform(20, 30, len(dates)),
-            'humidity_avg': np.random.uniform(60, 90, len(dates)),
-            'precipitation': np.random.uniform(0, 10, len(dates))
-        }
-        return pd.DataFrame(weather_data)
+        weather_data = []
+        for date_val in dates:
+            weather_data.append({
+                'date': date_val,
+                'temperature_avg': np.random.uniform(20, 30),
+                'humidity_avg': np.random.uniform(60, 90),
+                'precipitation': np.random.uniform(0, 10)
+            })
+        return weather_data
 
     def fetch_satellite_data(self, bounding_box, start_date, end_date):
         logging.info(f"Fetching mock satellite data for {bounding_box} from {start_date} to {end_date}")
-        # Generate dummy satellite data (e.g., NDVI)
+        # Generate dummy satellite data (e.g., NDVI) as a list of dictionaries
         dates = [start_date + datetime.timedelta(days=i * 7) for i in range(((end_date - start_date).days // 7) + 1)]
-        satellite_data = {
-            'date': dates,
-            'ndvi': np.random.uniform(0.3, 0.8, len(dates))
-        }
-        return pd.DataFrame(satellite_data)
+        satellite_data = []
+        for date_val in dates:
+            satellite_data.append({
+                'date': date_val,
+                'ndvi': np.random.uniform(0.3, 0.8)
+            })
+        return satellite_data
 
     def load_farm_practices_data(self, farm_ids, app_data):
         logging.info(f"Loading farm practices data for {farm_ids}")
@@ -133,9 +131,9 @@ class DataProcessor:
             app_data['farms'].append(dummy_farm_data)
             logging.info(f"Created dummy farm data for {new_farm_id}")
             save_app_data(app_data)
-            return pd.DataFrame([dummy_farm_data])
+            return [dummy_farm_data] # Return as list of dicts
         
-        return pd.DataFrame(existing_farms)
+        return existing_farms
 
 
     def load_soil_data(self, farm_ids, app_data):
@@ -143,38 +141,38 @@ class DataProcessor:
         # Soil data is typically static or part of farm practices data for this simulation
         return self.load_farm_practices_data(farm_ids, app_data) # Re-use farm practices for basic soil info
 
-    def preprocess_data(self, weather_df, satellite_df, farm_data_df, current_farm_id, current_date, app_data):
+    def preprocess_data(self, weather_data, satellite_data, farm_data, current_farm_id, current_date, app_data):
         logging.info(f"Preprocessing data for farm: {current_farm_id}")
         
-        # Merge weather and satellite data
-        # Ensure 'date' column is datetime and set as index for resampling
-        if 'date' in weather_df.columns:
-            weather_df['date'] = pd.to_datetime(weather_df['date'])
-            weather_df = weather_df.set_index('date').resample('D').mean().interpolate()
+        # Simple aggregation for weather and satellite data
+        # In a real scenario, this would involve more complex time-series processing.
+        # Here, we'll just take the average or latest values.
 
-        if 'date' in satellite_df.columns:
-            satellite_df['date'] = pd.to_datetime(satellite_df['date'])
-            satellite_df = satellite_df.set_index('date').resample('D').mean().interpolate()
+        latest_env_data = {}
+        if weather_data:
+            latest_weather = weather_data[-1] # Take the latest available
+            latest_env_data['temperature_avg'] = latest_weather['temperature_avg']
+            latest_env_data['humidity_avg'] = latest_weather['humidity_avg']
+            latest_env_data['precipitation'] = latest_weather['precipitation']
+            latest_env_data['gdd'] = max(0, latest_weather['temperature_avg'] - 10) # Simple GDD calculation
 
-        # Combine environmental data
-        environmental_df = weather_df.merge(satellite_df, left_index=True, right_index=True, how='outer')
-        environmental_df = environmental_df.resample('D').mean().interpolate(method='linear')
-        
-        # Calculate derived features from environmental data
-        environmental_df['gdd'] = (environmental_df['temperature_avg'] - 10).clip(lower=0) # Growing Degree Days base 10C
-        
-        # Select the latest environmental features for prediction
-        latest_env_data = environmental_df.iloc[-1] if not environmental_df.empty else pd.Series()
+        if satellite_data:
+            latest_satellite = satellite_data[-1] # Take the latest available
+            latest_env_data['ndvi'] = latest_satellite['ndvi']
 
-        # Extract relevant features from farm_data_df for the current farm
-        farm_features = farm_data_df[farm_data_df['farm_id'] == current_farm_id].iloc[0] if not farm_data_df.empty else pd.Series()
+        # Find the specific farm's data
+        farm_features = None
+        for farm_rec in farm_data:
+            if farm_rec['farm_id'] == current_farm_id:
+                farm_features = farm_rec
+                break
 
-        if farm_features.empty:
+        if farm_features is None:
             logging.error(f"Farm data not found for {current_farm_id} during preprocessing.")
             raise ValueError(f"Farm data not found for {current_farm_id}.")
 
-        # Create a single feature vector for prediction
-        features = {
+        # Create a single feature vector (dictionary) for prediction
+        features_dict = {
             'temperature_avg': latest_env_data.get('temperature_avg', np.random.uniform(20,30)),
             'humidity_avg': latest_env_data.get('humidity_avg', np.random.uniform(60,90)),
             'precipitation': latest_env_data.get('precipitation', np.random.uniform(0,10)),
@@ -188,13 +186,14 @@ class DataProcessor:
             'days_since_planting': (current_date - farm_features.get('planting_date', current_date)).days
         }
 
-        # Handle categorical features (crop_type, soil_type, irrigation_method) if your model uses them
-        # For simplicity, let's just add them as is, assuming the model handles them or they are encoded later
-        features['crop_type'] = farm_features.get('crop_type', 'Maize')
-        features['soil_type'] = farm_features.get('soil_type', 'Loam')
-        features['irrigation_method'] = farm_features.get('irrigation_method', 'Rainfed')
+        # Include categorical features as separate dictionary entries for now
+        # The YieldPredictor will handle mapping these to numerical values (e.g., one-hot encoding if needed)
+        features_dict['crop_type'] = farm_features.get('crop_type', 'Maize')
+        features_dict['soil_type'] = farm_features.get('soil_type', 'Loam')
+        features_dict['irrigation_method'] = farm_features.get('irrigation_method', 'Rainfed')
 
-        return pd.DataFrame([features])
+        # Return a list containing this single feature dictionary
+        return [features_dict]
 
 
 # --- ML Model Training and Prediction Component ---
@@ -207,10 +206,17 @@ class YieldPredictor:
             'ph', 'nitrogen', 'phosphorus', 'fertilizer_applied', 'previous_yield',
             'days_since_planting'
         ]
-        # Example categories for one-hot encoding if needed
+        # Example categories for one-hot encoding if needed (for internal use by model)
         self.crop_types = ['Maize', 'Rice', 'Wheat', 'Beans']
         self.soil_types = ['Loam', 'Clay', 'Sand']
         self.irrigation_methods = ['Rainfed', 'Drip', 'Sprinkler']
+        
+        # To handle categorical features for prediction, we need consistent encoding.
+        # A simple approach for this mock: map them to indices or use one-hot if building a pipeline.
+        # For this basic RF model, we will only use numerical features from the `feature_columns` list directly.
+        # If the categorical features were needed by the model, they would need explicit encoding steps here
+        # or as part of a scikit-learn Pipeline.
+
         self._load_model()
         logging.info("YieldPredictor initialized.")
 
@@ -227,42 +233,49 @@ class YieldPredictor:
         joblib.dump(self.model, self.model_path)
         logging.info(f"ML model saved to {self.model_path}")
 
-    def train_model(self, data_df=None):
+    def train_model(self, data=None):
         logging.info("Training ML model...")
         
-        if data_df is None or data_df.empty:
+        if data is None or not data:
             logging.info("Generating synthetic data for model training.")
             num_samples = 100
-            data = {
-                'temperature_avg': np.random.uniform(20, 30, num_samples),
-                'humidity_avg': np.random.uniform(60, 90, num_samples),
-                'precipitation': np.random.uniform(0, 10, num_samples),
-                'ndvi': np.random.uniform(0.3, 0.8, num_samples),
-                'gdd': np.random.uniform(10, 25, num_samples),
-                'ph': np.random.uniform(5.5, 7.5, num_samples),
-                'nitrogen': np.random.uniform(50, 150, num_samples),
-                'phosphorus': np.random.uniform(30, 80, num_samples),
-                'fertilizer_applied': np.random.randint(0, 2, num_samples),
-                'previous_yield': np.random.uniform(1.0, 3.0, num_samples),
-                'days_since_planting': np.random.randint(60, 180, num_samples),
-                'crop_type': np.random.choice(self.crop_types, num_samples),
-                'soil_type': np.random.choice(self.soil_types, num_samples),
-                'irrigation_method': np.random.choice(self.irrigation_methods, num_samples),
-                'yield': np.random.uniform(1.5, 4.0, num_samples) # Target variable
-            }
-            data_df = pd.DataFrame(data)
+            training_data_list = []
+            for _ in range(num_samples):
+                training_data_list.append({
+                    'temperature_avg': np.random.uniform(20, 30),
+                    'humidity_avg': np.random.uniform(60, 90),
+                    'precipitation': np.random.uniform(0, 10),
+                    'ndvi': np.random.uniform(0.3, 0.8),
+                    'gdd': np.random.uniform(10, 25),
+                    'ph': np.random.uniform(5.5, 7.5),
+                    'nitrogen': np.random.uniform(50, 150),
+                    'phosphorus': np.random.uniform(30, 80),
+                    'fertilizer_applied': np.random.randint(0, 2),
+                    'previous_yield': np.random.uniform(1.0, 3.0),
+                    'days_since_planting': np.random.randint(60, 180),
+                    'crop_type': np.random.choice(self.crop_types),
+                    'soil_type': np.random.choice(self.soil_types),
+                    'irrigation_method': np.random.choice(self.irrigation_methods),
+                    'yield': np.random.uniform(1.5, 4.0) # Target variable
+                })
+            data = training_data_list
         
-        # One-hot encode categorical features if they are used by the model
-        # For simplicity, we'll select only numerical features for this basic RandomForest
-        # If you integrate more complex models (e.g., CatBoost, LightGBM, or Scikit-learn with OneHotEncoder),
-        # you'd include these categorical columns in your feature set.
+        # Prepare data for Scikit-learn (numerical features only for this basic RF)
+        # Extract features and target into NumPy arrays
+        X_list = []
+        y_list = []
+        for record in data:
+            row_features = [record[col] for col in self.feature_columns]
+            X_list.append(row_features)
+            y_list.append(record['yield'])
         
-        X = data_df[self.feature_columns]
-        y = data_df['yield']
+        X = np.array(X_list)
+        y = np.array(y_list)
 
-        from sklearn.ensemble import RandomForestRegressor
-        from sklearn.model_selection import train_test_split
-        from sklearn.metrics import mean_absolute_error, r2_score
+        # Ensure there's enough data for splitting
+        if len(X) < 2:
+            logging.warning("Not enough data to perform train-test split. Skipping training.")
+            return None, None
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -276,22 +289,28 @@ class YieldPredictor:
         logging.info(f"Model training complete. MAE: {mae:.2f}, R2: {r2:.2f}")
         return mae, r2
 
-    def make_prediction(self, input_df, app_data):
+    def make_prediction(self, input_features_list, app_data):
         logging.info("Making prediction...")
         if self.model is None:
             logging.error("Model not trained. Training initial model.")
             self.train_model() # Train if not already trained
 
-        # Ensure input_df has all required feature columns in the correct order
-        # Handle categorical features if present in input_df by removing them for this simple model
-        X_predict = input_df[self.feature_columns]
+        if not input_features_list:
+            raise ValueError("Input features list is empty.")
+            
+        # Assuming input_features_list contains a single dictionary for prediction
+        input_features_dict = input_features_list[0] 
         
+        # Extract features into a NumPy array in the correct order
+        X_predict_row = [input_features_dict[col] for col in self.feature_columns]
+        X_predict = np.array([X_predict_row]) # Reshape for single prediction
+
         predicted_yield = self.model.predict(X_predict)
         
         # Save prediction to app_data
         prediction_record = {
             "id": str(uuid.uuid4()),
-            "farm_id": input_df['farm_id'].iloc[0], # Assuming farm_id is in input_df
+            "farm_id": input_features_dict['farm_id'], # Assuming farm_id is in input_features_dict
             "predicted_yield": predicted_yield[0],
             "timestamp": datetime.datetime.now()
         }
@@ -432,19 +451,19 @@ class AgriPredictXOrchestrator:
                                                                   start_date=start_date_data, end_date=current_date)
         
         # Load farm practices data (this will also create dummy if not exists)
-        farm_practices_df = self.data_processor.load_farm_practices_data(farm_ids=[farm_id], app_data=self.app_data)
+        farm_practices_data = self.data_processor.load_farm_practices_data(farm_ids=[farm_id], app_data=self.app_data)
         
         # Soil data is part of farm practices for this mock
-        soil_data_df = farm_practices_df # For consistency with old flow
+        soil_data = farm_practices_data # For consistency with old flow
 
         # Preprocess data to create features for the ML model
-        prediction_input_df = self.data_processor.preprocess_data(
-            weather_data, satellite_data, soil_data_df, farm_id, current_date, app_data=self.app_data
+        prediction_input_features = self.data_processor.preprocess_data(
+            weather_data, satellite_data, soil_data, farm_id, current_date, app_data=self.app_data
         )
 
         # 2. ML Prediction (will save prediction to app_data)
         try:
-            predicted_yield = self.yield_predictor.make_prediction(prediction_input_df, app_data=self.app_data)[0]
+            predicted_yield = self.yield_predictor.make_prediction(prediction_input_features, app_data=self.app_data)[0]
             logging.info(f"Predicted yield for {farm_id}: {predicted_yield:.2f} tons/hectare")
 
             # 3. Record on Blockchain (mocked)
@@ -490,9 +509,9 @@ class AgriPredictXOrchestrator:
         """
         Populates the data store with an initial set of dummy farm data, predictions,
         actual yields, and shipments for demonstration purposes.
-        This ensures the dashboard has data to display on first run.
+        This ensures the system has data to work with on first run.
         """
-        logging.info("\n--- Populating initial dummy data for dashboard ---")
+        logging.info("\n--- Populating initial dummy data ---")
         
         farms_to_simulate = [
             {"id": "Dodoma_Farm_A", "lat": -6.1738, "lon": 35.7479, "initial_yield": 1.8},
@@ -567,301 +586,21 @@ class AgriPredictXOrchestrator:
 
         logging.info("--- Initial dummy data population complete ---")
 
-# --- Streamlit Dashboard App (Integrated) ---
-def run_streamlit_app(orchestrator_instance):
-    st.set_page_config(layout="wide")
-    st.title("🌱 AgriPredict-X Dashboard for Tanzania 🇹🇿")
-
-    st.markdown("""
-    This dashboard provides insights into agricultural yield predictions and supply chain movements.
-    Data displayed here is sourced from the local `app_data.json` file.
-    """)
-
-    # --- Data Fetching from App Data (with cache) ---
-    @st.cache_data
-    def fetch_prediction_data_for_dashboard(app_data_from_orchestrator):
-        logging.info("Fetching prediction data for dashboard (or cache)...")
-        # Ensure data is deep-copied or new dictionaries are created to avoid modifying cached dicts
-        predictions = [p.copy() for p in app_data_from_orchestrator.get('predictions', [])]
-        actuals = [a.copy() for a in app_data_from_orchestrator.get('actual_yields', [])]
-        farm_data_records = [f.copy() for f in app_data_from_orchestrator.get('farms', [])]
-
-        predictions_df = pd.DataFrame(predictions) if predictions else pd.DataFrame()
-        actuals_df = pd.DataFrame(actuals) if actuals else pd.DataFrame()
-        farm_data_df = pd.DataFrame(farm_data_records) if farm_data_records else pd.DataFrame()
-
-        if not predictions_df.empty:
-            predictions_df = predictions_df.rename(columns={'timestamp': 'predicted_timestamp'})
-            predictions_df['predicted_timestamp'] = pd.to_datetime(predictions_df['predicted_timestamp'])
-            
-            # Use farm_id for merging, ensure it's a string
-            predictions_df['farm_id'] = predictions_df['farm_id'].astype(str)
-
-            if not actuals_df.empty:
-                actuals_df = actuals_df.rename(columns={'timestamp': 'actual_timestamp'})
-                actuals_df['actual_timestamp'] = pd.to_datetime(actuals_df['actual_timestamp'])
-                actuals_df['farm_id'] = actuals_df['farm_id'].astype(str)
-                combined_df = predictions_df.merge(actuals_df, on='farm_id', how='left', suffixes=('_pred', '_actual'))
-            else:
-                combined_df = predictions_df.copy()
-                combined_df['actual_yield'] = np.nan
-                combined_df['actual_timestamp'] = pd.NaT
-            
-            # Add crop_type from farm_data_df
-            if not farm_data_df.empty:
-                farm_data_df['farm_id'] = farm_data_df['farm_id'].astype(str)
-                combined_df = combined_df.merge(farm_data_df[['farm_id', 'crop_type']], on='farm_id', how='left')
-            
-            # Add a dummy region for demonstration
-            if 'region' not in combined_df.columns:
-                def assign_region(farm_id):
-                    if farm_id.startswith("Dodoma"): return "Dodoma"
-                    if farm_id.startswith("Mbeya"): return "Mbeya"
-                    if farm_id.startswith("Morogoro"): return "Morogoro"
-                    if farm_id.startswith("Arusha"): return "Arusha"
-                    if farm_id.startswith("Iringa"): return "Iringa"
-                    if farm_id.startswith("Tabora"): return "Tabora"
-                    return np.random.choice(['Dodoma', 'Mbeya', 'Morogoro', 'Arusha', 'Iringa', 'Tabora'])
-
-                combined_df['region'] = combined_df['farm_id'].apply(assign_region)
-                
-        else:
-            combined_df = pd.DataFrame(columns=['farm_id', 'predicted_yield', 'actual_yield', 'predicted_timestamp', 'actual_timestamp', 'region', 'crop_type'])
-
-        logging.info(f"Fetched dashboard prediction data. Contains {len(combined_df['farm_id'].unique()) if not combined_df.empty else 0} unique farms.")
-        return combined_df
-
-    @st.cache_data
-    def fetch_shipment_data_for_dashboard(app_data_from_orchestrator):
-        logging.info("Fetching shipment data for dashboard (or cache)...")
-        shipments = [s.copy() for s in app_data_from_orchestrator.get('shipments', [])]
-        shipments_df = pd.DataFrame(shipments) if shipments else pd.DataFrame()
-        if not shipments_df.empty:
-            shipments_df['timestamp'] = pd.to_datetime(shipments_df['timestamp'])
-        logging.info(f"Fetched dashboard shipment data. Contains {len(shipments_df)} shipments.")
-        return shipments_df
-
-    # --- Functions to trigger actions ---
-    def trigger_new_prediction_cycle_ui():
-        # Clear specific caches affected by new data
-        fetch_prediction_data_for_dashboard.clear()
-        fetch_shipment_data_for_dashboard.clear()
-        
-        # Determine a new farm ID based on existing farms
-        current_farm_count = len(orchestrator_instance.app_data['farms'])
-        new_farm_id = f"NewFarm_{current_farm_count + 1:03d}"
-        
-        new_lat = np.random.uniform(-11.5, -1.0)
-        new_lon = np.random.uniform(29.5, 40.5)
-        current_time_for_new_data = datetime.datetime.now() + datetime.timedelta(minutes=np.random.randint(1, 60))
-        
-        with st.spinner(f"Running prediction cycle for {new_farm_id}..."):
-            orchestrator_instance.run_prediction_cycle(
-                farm_id=new_farm_id,
-                lat=new_lat,
-                lon=new_lon,
-                current_date=current_time_for_new_data
-            )
-            orchestrator_instance.run_supply_chain_logging_event(
-                event_type="actual_yield",
-                farm_id=new_farm_id,
-                actual_yield=round(np.random.uniform(1.0, 3.5), 2),
-                timestamp=current_time_for_new_data + datetime.timedelta(days=np.random.randint(20, 40))
-            )
-            orchestrator_instance.run_supply_chain_logging_event(
-                event_type="shipment",
-                shipment_id=str(uuid.uuid4()),
-                farm_id=new_farm_id,
-                quantity_kg=np.random.randint(800, 2500),
-                origin_loc=f"{new_farm_id.split('_')[0] if '_' in new_farm_id else 'Generated'} Local",
-                dest_loc=np.random.choice(['Dar es Salaam Central Market', 'Arusha Distribution', 'Zanzibar Port']),
-                timestamp=current_time_for_new_data + datetime.timedelta(days=np.random.randint(45, 70))
-            )
-        st.success(f"New prediction cycle for {new_farm_id} completed and data saved!")
-        st.rerun()
-
-    def retrain_ml_model_ui():
-        # Clear all relevant caches before retraining
-        st.cache_data.clear() # Clears both prediction and shipment data caches
-        st.cache_resource.clear() # Clears orchestrator instance
-        
-        with st.spinner("Retraining ML Model... This might take a moment."):
-            # Re-initialize orchestrator, which will trigger training via get_orchestrator
-            # This calls the cached function which itself handles initial setup and training
-            _ = get_orchestrator_cached() 
-        st.success("ML Model retraining completed!")
-        st.rerun()
-
-    def clear_database_content_and_repopulate_ui():
-        """
-        Deletes all records from the in-memory app_data, then repopulates with initial dummy data,
-        and saves to JSON.
-        """
-        with st.spinner("Clearing data content and repopulating..."):
-            orchestrator_instance.app_data = { # Reset app_data directly in orchestrator
-                "farms": [],
-                "predictions": [],
-                "actual_yields": [],
-                "shipments": []
-            }
-            save_app_data(orchestrator_instance.app_data) # Save empty state
-            logging.info("All existing data records deleted from app_data.json.")
-            
-            # Clear Streamlit caches so new data is fetched
-            fetch_prediction_data_for_dashboard.clear()
-            fetch_shipment_data_for_dashboard.clear()
-            
-            # Repopulate with dummy data
-            orchestrator_instance.populate_initial_dummy_data()
-            
-        st.success("Data content cleared and re-populated with fresh dummy data (JSON structure preserved)!")
-        st.rerun()
-
-    def clear_all_data_and_reset_file_ui():
-        """
-        Deletes the app_data.json file and clears all caches,
-        forcing a complete re-initialization.
-        """
-        if os.path.exists(APP_DATA_FILE):
-            os.remove(APP_DATA_FILE)
-            st.info(f"Deleted existing data file: {APP_DATA_FILE}.")
-        
-        st.cache_data.clear()
-        st.cache_resource.clear() # Clear orchestrator cache (which calls get_orchestrator again on rerun)
-        st.success("All caches cleared and data file reset! App will re-initialize with fresh data.")
-        st.rerun()
-
-    # --- Dashboard Layout ---
-    # Pass the orchestrator's app_data to the fetching functions
-    predictions_actuals_df = fetch_prediction_data_for_dashboard(orchestrator_instance.app_data)
-    shipments_df = fetch_shipment_data_for_dashboard(orchestrator_instance.app_data)
-
-    st.header("Yield Prediction Overview")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Total Farms Monitored", len(predictions_actuals_df['farm_id'].unique()) if not predictions_actuals_df.empty else 0)
-    with col2:
-        st.metric("Avg Predicted Yield (t/ha)", f"{predictions_actuals_df['predicted_yield'].mean():.2f}" if not predictions_actuals_df.empty else "N/A")
-    with col3:
-        st.metric("Total Shipments Recorded", len(shipments_df) if not shipments_df.empty else 0)
-
-    if not predictions_actuals_df.empty:
-        st.subheader("Predicted vs. Actual Yields by Farm")
-        selected_region = st.selectbox("Filter by Region", ['All'] + sorted(list(predictions_actuals_df['region'].unique())))
-        if selected_region != 'All':
-            filtered_predictions = predictions_actuals_df[predictions_actuals_df['region'] == selected_region]
-        else:
-            filtered_predictions = predictions_actuals_df
-
-        if not filtered_predictions.empty:
-            fig_yield_comp, ax_yield_comp = plt.subplots(figsize=(12, 6))
-            plot_df = filtered_predictions[['farm_id', 'predicted_yield', 'actual_yield']].set_index('farm_id')
-            plot_df.plot(kind='bar', ax=ax_yield_comp, width=0.8)
-            ax_yield_comp.set_ylabel("Yield (tons/hectare)")
-            ax_yield_comp.set_title(f"Predicted vs. Actual Yields in {selected_region}")
-            plt.xticks(rotation=45, ha='right')
-            st.pyplot(fig_yield_comp)
-        else:
-            st.info("No prediction data for the selected region or farms in this region.")
-
-        st.subheader("Yield Trends Over Time")
-        # Ensure timestamp column is datetime before sorting
-        predictions_actuals_df['predicted_timestamp'] = pd.to_datetime(predictions_actuals_df['predicted_timestamp'])
-        predictions_actuals_df_sorted = predictions_actuals_df.sort_values('predicted_timestamp')
-
-        fig_yield_trend, ax_yield_trend = plt.subplots(figsize=(12, 6))
-        sns.lineplot(x='predicted_timestamp', y='predicted_yield', data=predictions_actuals_df_sorted, label='Predicted', ax=ax_yield_trend)
-        if 'actual_yield' in predictions_actuals_df_sorted.columns and not predictions_actuals_df_sorted['actual_yield'].isnull().all():
-            sns.lineplot(x='predicted_timestamp', y='actual_yield', data=predictions_actuals_df_sorted.dropna(subset=['actual_yield']), label='Actual', ax=ax_yield_trend)
-        ax_yield_trend.set_xlabel("Date")
-        ax_yield_trend.set_ylabel("Yield (tons/hectare)")
-        ax_yield_trend.set_title("Overall Yield Trend")
-        ax_yield_trend.tick_params(axis='x', rotation=45)
-        ax_yield_trend.legend()
-        st.pyplot(fig_yield_trend)
-    else:
-        st.info("No yield prediction data available yet. Use the sidebar buttons to generate data.")
-
-    st.header("Supply Chain Monitoring")
-    if not shipments_df.empty:
-        st.subheader("Shipment Volume by Destination")
-        fig_shipment_dest, ax_shipment_dest = plt.subplots(figsize=(10, 5))
-        shipments_df.groupby('dest_loc')['quantity_kg'].sum().sort_values(ascending=False).plot(kind='bar', ax=ax_shipment_dest)
-        ax_shipment_dest.set_ylabel("Total Quantity (kg)")
-        ax_shipment_dest.set_xlabel("Destination Location")
-        ax_shipment_dest.set_title("Total Shipment Volume by Destination")
-        st.pyplot(fig_shipment_dest)
-
-        st.subheader("Recent Shipments Log")
-        st.dataframe(shipments_df.sort_values('timestamp', ascending=False).head(15))
-    else:
-        st.info("No shipment data available yet. Use the sidebar buttons to generate data.")
-
-    st.sidebar.header("AgriPredict-X Control")
-    st.sidebar.markdown("Use these buttons to interact with the system:")
-    if st.sidebar.button("Trigger New Prediction Cycle", use_container_width=True):
-        trigger_new_prediction_cycle_ui()
-    if st.sidebar.button("Retrain ML Model", use_container_width=True):
-        retrain_ml_model_ui()
-
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("Data Management:")
-    if st.sidebar.button("Clear Data (Keep Structure)", help="Deletes all data records, then repopulates dummy data (keeps the JSON file structure).", use_container_width=True):
-        clear_database_content_and_repopulate_ui()
-
-    if st.sidebar.button("Clear All Data File & Reset", help="Deletes the 'app_data.json' file, clears all caches, and forces app to re-initialize with fresh dummy data.", use_container_width=True):
-        clear_all_data_and_reset_file_ui()
-
-
-# --- Global Orchestrator Caching for Streamlit ---
-# This will be called by Streamlit when it runs the script, and its results cached.
-@st.cache_resource(ttl=3600) # Cache for 1 hour, or until app restart/code change
-def get_orchestrator_cached():
-    logging.info("Initializing AgriPredictXOrchestrator and performing initial setup...")
-    orch = AgriPredictXOrchestrator()
-    orch.initial_setup_and_training()
-    # Populate dummy data only if no predictions exist (first run scenario or after clearing data)
-    if not orch.app_data['predictions']:
-        logging.info("No existing prediction data found. Populating initial dummy data.")
-        orch.populate_initial_dummy_data()
-    return orch
-
 # --- Main Entry Point ---
 if __name__ == "__main__":
-    # Check if the environment variable is set, indicating we are in Streamlit's context
-    if os.getenv(STREAMLIT_APP_MODE_ENV) == "true":
-        # If the environment variable is set, it means this instance was launched by
-        # the initial Python script, and it should run as a Streamlit app.
-        logging.info("AgriPredict-X Streamlit App: Detected Streamlit app mode via environment variable. Running application logic.")
-        orchestrator_instance = get_orchestrator_cached()
-        run_streamlit_app(orchestrator_instance)
-    else:
-        # If the environment variable is NOT set, it means `python main_system.py`
-        # was executed directly. We need to launch Streamlit.
-        logging.info("AgriPredict-X System: Direct Python execution detected. Launching Streamlit dashboard in a new process...")
-        try:
-            # Create a copy of the current environment and set the flag for the subprocess
-            env = os.environ.copy()
-            env[STREAMLIT_APP_MODE_ENV] = "true"
+    logging.info("AgriPredict-X Backend System: Starting up...")
+    
+    # Initialize the orchestrator
+    orchestrator_instance = AgriPredictXOrchestrator()
+    
+    # Perform initial setup and model training
+    orchestrator_instance.initial_setup_and_training()
+    
+    # Populate dummy data if no predictions exist (first run scenario or after clearing data)
+    if not orchestrator_instance.app_data['predictions']:
+        logging.info("No existing prediction data found. Populating initial dummy data.")
+        orchestrator_instance.populate_initial_dummy_data()
 
-            # Construct the command to run Streamlit, ensuring it uses the current Python environment
-            # os.path.abspath(__file__) provides the full path to the current script
-            command = [sys.executable, "-m", "streamlit", "run", os.path.abspath(__file__)]
-            
-            # Use subprocess.Popen to launch Streamlit in a non-blocking way.
-            # Pass the modified environment to the new process.
-            subprocess.Popen(command, env=env)
-            logging.info(f"Streamlit dashboard launched with command: {' '.join(command)}")
-            
-            # Exit the current script immediately after launching the Streamlit process.
-            # This prevents the original `python main_system.py` process from continuing
-            # and avoids any potential conflicts or infinite loops.
-            sys.exit(0)
-            
-        except FileNotFoundError:
-            logging.error("Streamlit command 'streamlit' not found. Please ensure Streamlit is installed and in your system's PATH.")
-            logging.info("You can install Streamlit using: pip install streamlit")
-            sys.exit(1)
-        except Exception as e:
-            logging.error(f"An unexpected error occurred while trying to launch Streamlit: {e}")
-            sys.exit(1)
+    logging.info("AgriPredict-X Backend System: Initialization complete. Data is processed and saved to app_data.json.")
+    logging.info("You can inspect the 'app_data.json' file to see the generated data.")
+    # The script will now simply exit after completing its tasks.
